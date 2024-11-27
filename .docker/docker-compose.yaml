@@ -1,0 +1,42 @@
+version: "3"
+
+services:
+    mykeycloak:
+        build:
+            context: ../
+            dockerfile: .docker/Dockerfile
+        container_name: mykeycloak
+        environment:
+            - KC_HTTPS_CERTIFICATE_KEY_FILE=/etc/x509/https/privkey.pem
+            - KC_HTTPS_CERTIFICATE_FILE=/etc/x509/https/fullchain.pem
+            - KC_DB_URL=jdbc:postgresql://keycloak-db:5432/keycloak
+            - KC_DB_USERNAME=db_admin
+            - KC_DB_PASSWORD=db_password
+            - KC_HOSTNAME=0.0.0.0
+            - KC_HOSTNAME_PORT=8443
+            - KEYCLOAK_ADMIN=admin
+            - KEYCLOAK_ADMIN_PASSWORD=password
+        volumes:
+            - .cert/fullchain.pem:/etc/x509/https/fullchain.pem
+            - .cert/privkey.pem:/etc/x509/https/privkey.pem
+        ports:
+            - "8443:8443"
+            - "9000:9000"
+        networks:
+            - keycloak-network
+        command: ["start", "--optimized", "--hostname=localhost"]
+
+    keycloak-db:
+        image: postgres:17.2
+        container_name: keycloak-db
+        environment:
+            POSTGRES_DB: keycloak
+            POSTGRES_USER: db_admin
+            POSTGRES_PASSWORD: db_password
+        networks:
+            - keycloak-network
+        volumes:
+            - ./keycloak-db-data:/var/lib/postgresql/data
+
+networks:
+    keycloak-network:
